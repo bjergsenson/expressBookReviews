@@ -7,10 +7,6 @@ const public_users = express.Router();
 
 const normalizeString = (str) => str.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '').trim();
 
-public_users.post("/register", (req, res) => {
-
-});
-
 
 // Get the book list available in the shop
 public_users.get('/', function (req, res) {

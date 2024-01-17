@@ -12,22 +12,30 @@ app.use(express.json());
 app.use(session({ secret: "fingerprint_customer", resave: true, saveUninitialized: true }))
 
 app.use("/customer/auth/*", function auth(req, res, next) {
-    if (req.session.authorization) {
-        token = req.session.authorization['accessToken'];
+    console.log("Entering auth middleware");
+    console.log("Session data:", req.session.authorization['username']);
+
+    if (req.session && req.session.authorization) {
+        const token = req.session.authorization['accessToken'];
+
         jwt.verify(token, "access", (err, user) => {
             if (!err) {
-                req.user = user;
+                req.session.user = user;  // Set the user in the session
                 next();
-            }
-            else {
-                return res.status(403).json({ message: "User not authenticated" })
+            } else {
+                console.error("JWT Verification Error:", err);
+                return res.status(403).json({ message: "User not authenticated during middleware" });
             }
         });
     } else {
-        return res.status(403).json({ message: "User not logged in" })
+        console.error("No session authorization found");
+        return res.status(403).json({ message: "User not logged in" });
     }
-}
-);
+});
+
+app.use("/customer", customer_routes);
+app.use("/", genl_routes);
+
 
 app.post("/register", (req, res) => {
     const username = req.body.username;
@@ -36,6 +44,7 @@ app.post("/register", (req, res) => {
     if (username && password) {
         if (!isValid(username)) {
             users.push({ "username": username, "password": password });
+            console.log(users)
             return res.status(200).json({ message: "User successfully registred. Now you can login" });
         } else {
             return res.status(404).json({ message: "User already exists!" });
@@ -43,11 +52,6 @@ app.post("/register", (req, res) => {
     }
     return res.status(404).json({ message: "Unable to register user." });
 });
-
-
-
-app.use("/customer", customer_routes);
-app.use("/", genl_routes);
 
 
 const PORT = 3333;
